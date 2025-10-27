@@ -1,2 +1,0 @@
-1. ml_target列：0是Web开发者，1是机器学习开发者
-2. musae_git_features.json是每个节点的特征向量
