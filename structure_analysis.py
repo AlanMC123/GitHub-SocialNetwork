@@ -1,35 +1,36 @@
 #!/usr/bin/env python3
 """
-GitHub 社会网络基础结构分析脚本（带进度条与可视化）
+GitHub 社会网络结构分析（有向图版）
 
-新增功能：
-  - 分析过程中添加进度条显示（tqdm）。
-  - 自动生成度分布可视化图（保存为 degree_distribution.png）。
-  - 保留路径直接指定模式，无需命令行参数。
+功能：
+  - 支持 igraph / networkx / cugraph 后端。
+  - 输出入度、出度分布（CSV + PNG）。
+  - 输出基本网络结构指标。
 """
 
 import os
-import math
 from collections import Counter
 import pandas as pd
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-# 指定字体
+# 指定中文字体
 plt.rcParams['font.family'] = ['Microsoft YaHei']
 
 # ========== 用户可修改路径 ==========
 NODES_PATH = r"musae_git_target.csv"  # 节点表路径
 EDGES_PATH = r"musae_git_edges_fixed.csv"  # 边表路径
 OUT_TXT_PATH = r"graph_structure/network_analysis.txt"  # 输出TXT路径
-OUT_DEGREE_CSV = r"graph_structure/degree_distribution.csv"  # 度分布CSV路径
-OUT_DEGREE_PNG = r"graph_structure/degree_distribution.png"  # 度分布可视化图路径
+OUT_IN_DEGREE_CSV = r"graph_structure/in_degree_distribution.csv"
+OUT_OUT_DEGREE_CSV = r"graph_structure/out_degree_distribution.csv"
+OUT_IN_DEGREE_PNG = r"graph_structure/in_degree_distribution.png"
+OUT_OUT_DEGREE_PNG = r"graph_structure/out_degree_distribution.png"
 USE_GPU = True  # 是否优先使用GPU (cuGraph)
-MAX_WORKERS = None  # NetworkX 多进程最大线程数
+MAX_WORKERS = None  # 多进程线程数
 # ===================================
 
-# try GPU / fast backends
+# 尝试加载不同后端
 _backend = None
 try:
     import cudf
@@ -44,22 +45,23 @@ except Exception:
         _backend = 'networkx'
 
 
+# ========== 基础函数 ==========
 def read_tables(nodes_path, edges_path):
     print("读取数据中...")
     nodes = pd.read_csv(nodes_path)
     edges = pd.read_csv(edges_path)
     if 'id' not in nodes.columns:
-        raise ValueError('节点表必须包含id列')
+        raise ValueError('节点表必须包含 id 列')
     if not {'source', 'target'}.issubset(edges.columns):
-        raise ValueError('边表必须包含source和target列')
+        raise ValueError('边表必须包含 source 和 target 列')
     print(f"节点数: {len(nodes)}, 边数: {len(edges)}")
     return nodes, edges
 
 
-def build_nx_graph(nodes_df, edges_df, undirected=True):
+def build_nx_graph(nodes_df, edges_df):
     import networkx as nx
-    G = nx.Graph() if undirected else nx.DiGraph()
-    print("构建图中...")
+    G = nx.DiGraph()
+    print("构建有向图中...")
     for _, row in tqdm(nodes_df.iterrows(), total=len(nodes_df), desc="添加节点"):
         G.add_node(row['id'], **{k: row[k] for k in nodes_df.columns if k != 'id'})
     for _, row in tqdm(edges_df.iterrows(), total=len(edges_df), desc="添加边"):
@@ -67,25 +69,37 @@ def build_nx_graph(nodes_df, edges_df, undirected=True):
     return G
 
 
-def nx_degree_distribution(G):
-    from collections import Counter
-    degs = [d for n, d in G.degree()]
-    c = Counter(degs)
-    avg_deg = sum(degs) / len(degs)
-    return sorted(c.items()), degs, avg_deg
+# ========== 有向图专用度分布 ==========
+def nx_degree_distribution_directed(G):
+    indeg = [d for n, d in G.in_degree()]
+    outdeg = [d for n, d in G.out_degree()]
+
+    indeg_items = sorted(Counter(indeg).items())
+    outdeg_items = sorted(Counter(outdeg).items())
+
+    avg_indeg = sum(indeg) / len(indeg)
+    avg_outdeg = sum(outdeg) / len(outdeg)
+
+    return indeg_items, outdeg_items, avg_indeg, avg_outdeg
 
 
+# ========== 基本网络指标 ==========
 def nx_basic_stats(G, max_workers=None):
     import networkx as nx
     print("计算网络指标中...")
+
     n = G.number_of_nodes()
     m = G.number_of_edges()
-    density = (2 * m) / (n * (n - 1)) if n > 1 else 0
-    comps = list(nx.connected_components(G))
+    density = nx.density(G)
+
+    # 使用无向图来计算聚类、路径等指标
+    GU = G.to_undirected()
+
+    comps = list(nx.connected_components(GU))
     comp_count = len(comps)
     comp_sizes = sorted([len(c) for c in comps], reverse=True)
-    largest = G.subgraph(comps[0])
-    avg_clustering = nx.average_clustering(G)
+    largest = GU.subgraph(comps[0])
+    avg_clustering = nx.average_clustering(GU)
 
     print("计算最短路径与直径中（可能较慢）...")
 
@@ -109,6 +123,7 @@ def nx_basic_stats(G, max_workers=None):
             max_ecc = max(max_ecc, ecc)
 
     avg_path = total_sum / (largest.number_of_nodes() * (largest.number_of_nodes() - 1))
+
     return {
         'n_nodes': n,
         'n_edges': m,
@@ -122,12 +137,13 @@ def nx_basic_stats(G, max_workers=None):
     }
 
 
+# ========== 保存与绘图 ==========
 def save_degree_distribution(items, out_csv):
     os.makedirs(os.path.dirname(out_csv), exist_ok=True)
     pd.DataFrame(items, columns=['degree', 'count']).to_csv(out_csv, index=False)
 
 
-def plot_degree_distribution(items, out_png):
+def plot_degree_distribution(items, out_png, title):
     os.makedirs(os.path.dirname(out_png), exist_ok=True)
     degrees, counts = zip(*items)
     plt.figure(figsize=(8, 6))
@@ -136,39 +152,22 @@ def plot_degree_distribution(items, out_png):
     plt.yscale('log')
     plt.xlabel('Degree (对数)')
     plt.ylabel('Count (对数)')
-    plt.title('Degree Distribution (Log-Log Scale)')
+    plt.title(title)
     plt.grid(True, which="both", ls="--", lw=0.5)
     plt.tight_layout()
     plt.savefig(out_png)
     plt.close()
 
 
-def plot_degree_distribution_by_class(G, out_png):
-    os.makedirs(os.path.dirname(out_png), exist_ok=True)
-    degs_web = [d for n, d in G.degree() if G.nodes[n].get('ml_target') == 0]
-    degs_ml = [d for n, d in G.degree() if G.nodes[n].get('ml_target') == 1]
-
-    plt.figure(figsize=(8, 6))
-    plt.hist([degs_web, degs_ml], bins=50, label=['Web开发者 (0)', 'ML开发者 (1)'], color=['#1f77b4', '#ff7f0e'], alpha=0.7)
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.xlabel('Degree (对数)')
-    plt.ylabel('Frequency (对数)')
-    plt.title('Degree Distribution by Developer Type')
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(out_png)
-    plt.close()
-
-
-def write_results_txt(results, avg_degree, out_path, backend):
+def write_results_txt(results, avg_in, avg_out, out_path, backend):
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, 'w', encoding='utf-8') as f:
         f.write(f"Backend: {backend}\n")
         f.write(f"节点数: {results['n_nodes']}\n")
         f.write(f"边数: {results['n_edges']}\n")
-        f.write(f"平均度数: {avg_degree:.6f}\n")
-        f.write(f"密度: {results['density']:.6f}\n")
+        f.write(f"平均入度: {avg_in:.6f}\n")
+        f.write(f"平均出度: {avg_out:.6f}\n")
+        f.write(f"网络密度: {results['density']:.6f}\n")
         f.write(f"聚类系数: {results['avg_clustering']:.6f}\n")
         f.write(f"连通分量数: {results['n_components']}\n")
         f.write(f"最大连通子图节点数: {results['largest_cc_size']}\n")
@@ -176,6 +175,7 @@ def write_results_txt(results, avg_degree, out_path, backend):
         f.write(f"直径: {results['diameter_lcc']}\n")
 
 
+# ========== 主程序入口 ==========
 def main():
     nodes, edges = read_tables(NODES_PATH, EDGES_PATH)
     backend = _backend
@@ -184,17 +184,26 @@ def main():
     if backend == 'networkx':
         G = build_nx_graph(nodes, edges)
         stats = nx_basic_stats(G, max_workers=MAX_WORKERS)
-        items, degs, avg_deg = nx_degree_distribution(G)
-        save_degree_distribution(items, OUT_DEGREE_CSV)
-        plot_degree_distribution(items, OUT_DEGREE_PNG)
-        plot_degree_distribution_by_class(G, OUT_DEGREE_PNG_BY_CLASS)
-        write_results_txt(stats, avg_deg, OUT_TXT_PATH, backend)
+        indeg_items, outdeg_items, avg_in, avg_out = nx_degree_distribution_directed(G)
+
+        save_degree_distribution(indeg_items, OUT_IN_DEGREE_CSV)
+        save_degree_distribution(outdeg_items, OUT_OUT_DEGREE_CSV)
+
+        plot_degree_distribution(indeg_items, OUT_IN_DEGREE_PNG, 'In-Degree Distribution (Log-Log)')
+        plot_degree_distribution(outdeg_items, OUT_OUT_DEGREE_PNG, 'Out-Degree Distribution (Log-Log)')
+
+        write_results_txt(stats, avg_in, avg_out, OUT_TXT_PATH, backend)
 
     elif backend == 'igraph':
         import igraph as ig
-        g = ig.Graph.DataFrame(edges, directed=False, vertices=nodes)
-        deg = g.degree()
-        avg_deg = sum(deg) / len(deg)
+        g = ig.Graph.DataFrame(edges, directed=True, vertices=nodes)
+        indeg = g.indegree()
+        outdeg = g.outdegree()
+        avg_in = sum(indeg) / len(indeg)
+        avg_out = sum(outdeg) / len(outdeg)
+        indeg_items = sorted(Counter(indeg).items())
+        outdeg_items = sorted(Counter(outdeg).items())
+
         stats = {
             'n_nodes': g.vcount(),
             'n_edges': g.ecount(),
@@ -206,31 +215,35 @@ def main():
             'avg_path_length_lcc': g.average_path_length(),
             'diameter_lcc': g.diameter()
         }
-        items = sorted(Counter(deg).items())
-        save_degree_distribution(items, OUT_DEGREE_CSV)
-        plot_degree_distribution(items, OUT_DEGREE_PNG)
-        write_results_txt(stats, avg_deg, OUT_TXT_PATH, backend)
+
+        save_degree_distribution(indeg_items, OUT_IN_DEGREE_CSV)
+        save_degree_distribution(outdeg_items, OUT_OUT_DEGREE_CSV)
+        plot_degree_distribution(indeg_items, OUT_IN_DEGREE_PNG, 'In-Degree Distribution (Log-Log)')
+        plot_degree_distribution(outdeg_items, OUT_OUT_DEGREE_PNG, 'Out-Degree Distribution (Log-Log)')
+        write_results_txt(stats, avg_in, avg_out, OUT_TXT_PATH, backend)
 
     elif backend == 'cugraph' and USE_GPU:
         import cudf, cugraph
-        G = cugraph.Graph()
+        G = cugraph.DiGraph()
         G.from_cudf_edgelist(cudf.DataFrame.from_pandas(edges), source='source', destination='target', renumber=True)
         stats = {
             'n_nodes': G.number_of_vertices(),
             'n_edges': G.number_of_edges(),
-            'density': (2 * G.number_of_edges()) / (G.number_of_vertices() * (G.number_of_vertices() - 1)),
-            'n_components': int(cugraph.connected_components(G)['component'].nunique()),
+            'density': G.number_of_edges() / (G.number_of_vertices() * (G.number_of_vertices() - 1)),
+            'n_components': 0,
             'component_sizes': [],
             'largest_cc_size': 0,
             'avg_clustering': float('nan'),
             'avg_path_length_lcc': float('nan'),
             'diameter_lcc': float('nan')
         }
-        avg_deg = (2 * G.number_of_edges()) / G.number_of_vertices()
-        write_results_txt(stats, avg_deg, OUT_TXT_PATH, backend)
+        avg_in = avg_out = G.number_of_edges() / G.number_of_vertices()
+        write_results_txt(stats, avg_in, avg_out, OUT_TXT_PATH, backend)
 
-    print(f"分析完成，结果已输出至 {OUT_TXT_PATH}")
-    print(f"度分布图已保存至 {OUT_DEGREE_PNG} 和 {OUT_DEGREE_PNG_BY_CLASS}")
+    print("分析完成 ✅")
+    print(f"结果已输出至: {OUT_TXT_PATH}")
+    print(f"入度分布图: {OUT_IN_DEGREE_PNG}")
+    print(f"出度分布图: {OUT_OUT_DEGREE_PNG}")
 
 
 if __name__ == '__main__':
