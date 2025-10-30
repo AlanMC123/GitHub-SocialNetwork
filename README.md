@@ -17,3 +17,6 @@ pandas, igraph, tqdm, numpy, scipy.stats, seaborn, matplotlib, reportlab, collec
 
 ### 2. 结构分析 structure_analysis.py
 该程序分析GitHub社交网络的结构特征，如度分布、密度、聚类系数等等。结果保存在graph_structure文件夹。
+
+### 3. 节点级别分析 node_level_analysis.py
+该程序分析了每个节点的核心度、结构洞指标，如PageRank、Coreness、Effective Size等。结果保存在node_level文件夹。
