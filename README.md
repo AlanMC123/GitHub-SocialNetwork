@@ -4,6 +4,8 @@
 ## 注意事项
 1. ml_target列：0是Web开发者，1是机器学习开发者。
 2. musae_git_features.json是每个节点的特征向量。
+3. musae_git_target.csv是节点表，包含了每个节点的基本信息。
+4. musae_git_edges_fixed.csv是边表，包含了所有边的信息，该表可直接导入到Gephi。
 
 ## 安装依赖
 pandas, igraph, tqdm, numpy, scipy.stats, seaborn, matplotlib, reportlab, collections, concurrent.futures
