@@ -11,12 +11,14 @@
 pandas, igraph, tqdm, numpy, scipy.stats, seaborn, matplotlib, reportlab, collections, concurrent.futures
 
 ## 研究步骤
-### 1. 初始分析 primary_analysis.py
-该程序分析Web开发者与机器学习开发者的网络结构差异。
-结果保存在primary_analysis文件夹。
+### 1. 结构分析 structure_analysis.py
+该程序分析GitHub社交网络的结构特征，如度分布、密度、聚类系数等等。
+结果保存在graph_structure文件夹。
 
-### 2. 结构分析 structure_analysis.py
-该程序分析GitHub社交网络的结构特征，如度分布、密度、聚类系数等等。结果保存在graph_structure文件夹。
+### 2. 差异分析 discrepancy_analysis.py
+该程序分析Web开发者与机器学习开发者的网络结构差异。
+结果保存在discrepancy_analysis文件夹。
 
 ### 3. 节点级别分析 node_level_analysis.py
-该程序分析了每个节点的核心度、结构洞指标，如PageRank、Coreness、Effective Size等。结果保存在node_level文件夹。
+该程序分析了每个节点的核心度、结构洞指标，如PageRank、Coreness、Effective Size等。
+结果保存在node_level文件夹。

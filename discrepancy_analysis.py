@@ -115,7 +115,7 @@ for metric in metrics_list:
     plt.xlabel("ml_target")
     plt.ylabel(metric)
     plt.tight_layout()
-    plt.savefig(f"primary_analysis/{metric}.png", dpi=300)
+    plt.savefig(f"discrepancy_analysis/{metric}.png", dpi=300)
     plt.close()
 print("  ✓ Plots saved")
 
@@ -124,7 +124,7 @@ print("  ✓ Plots saved")
 # ===========================================
 print("\nGenerating PDF report...")
 
-doc = SimpleDocTemplate("primary_analysis/network_analysis_report_igraph.pdf", pagesize=A4)
+doc = SimpleDocTemplate("discrepancy_analysis/network_analysis_report_igraph.pdf", pagesize=A4)
 styles = getSampleStyleSheet()
 story = []
 
