@@ -15,3 +15,7 @@ pandas, igraph, tqdm, numpy, scipy.stats, seaborn, matplotlib, reportlab, collec
 
 ### 2. 结构分析 structure_analysis.py
 该程序分析GitHub社交网络的结构特征，如度分布、密度、聚类系数等等。结果保存在graph_structure文件夹。
+
+### 3. 模型拟合 model_fitting.py
+该程序使用ERGM模型拟合GitHub社交网络，分析不同开发者类型之间的联系。结果保存在ERGM文件夹。
+随后使用

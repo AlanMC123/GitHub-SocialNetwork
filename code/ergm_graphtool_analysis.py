@@ -387,7 +387,9 @@ class NetworkAnalyzer:
 
 # 主函数
 def main():
-    file_path = 'd:\\code\\socianetwork\\musae_git_edges_fixed.csv'
+    import os
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(BASE_DIR, "..", "data", "musae_git_edges_fixed.csv")  # 使用相对路径
     
     # 创建分析器实例
     analyzer = NetworkAnalyzer(file_path)

@@ -18,14 +18,19 @@ import matplotlib.pyplot as plt
 # 指定中文字体
 plt.rcParams['font.family'] = ['Microsoft YaHei']
 
-# ========== 用户可修改路径 ==========
-NODES_PATH = r"musae_git_target.csv"  # 节点表路径
-EDGES_PATH = r"musae_git_edges_fixed.csv"  # 边表路径
-OUT_TXT_PATH = r"graph_structure/network_analysis.txt"  # 输出TXT路径
-OUT_IN_DEGREE_CSV = r"graph_structure/in_degree_distribution.csv"
-OUT_OUT_DEGREE_CSV = r"graph_structure/out_degree_distribution.csv"
-OUT_IN_DEGREE_PNG = r"graph_structure/in_degree_distribution.png"
-OUT_OUT_DEGREE_PNG = r"graph_structure/out_degree_distribution.png"
+
+import os
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+data_dir = os.path.join(BASE_DIR, "..", "data")
+output_dir = os.path.join(BASE_DIR, "graph_structure")
+
+NODES_PATH = os.path.join(data_dir, "musae_git_target.csv")  # 节点表路径
+EDGES_PATH = os.path.join(data_dir, "musae_git_edges_fixed.csv")  # 边表路径
+OUT_TXT_PATH = os.path.join(output_dir, "network_analysis.txt")  # 输出TXT路径
+OUT_IN_DEGREE_CSV = os.path.join(output_dir, "in_degree_distribution.csv")
+OUT_OUT_DEGREE_CSV = os.path.join(output_dir, "out_degree_distribution.csv")
+OUT_IN_DEGREE_PNG = os.path.join(output_dir, "in_degree_distribution.png")
+OUT_OUT_DEGREE_PNG = os.path.join(output_dir, "out_degree_distribution.png")
 USE_GPU = True  # 是否优先使用GPU (cuGraph)
 MAX_WORKERS = None  # 多进程线程数
 # ===================================
@@ -177,6 +182,8 @@ def write_results_txt(results, avg_in, avg_out, out_path, backend):
 
 # ========== 主程序入口 ==========
 def main():
+    # 确保输出目录存在
+    os.makedirs(output_dir, exist_ok=True)
     nodes, edges = read_tables(NODES_PATH, EDGES_PATH)
     backend = _backend
     print(f"使用后端: {backend}")
