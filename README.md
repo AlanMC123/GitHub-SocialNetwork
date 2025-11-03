@@ -11,23 +11,24 @@
 pandas, igraph, tqdm, numpy, scipy.stats, seaborn, matplotlib, reportlab, collections, concurrent.futures
 
 ## 研究步骤
-### 1. 结构分析 structure_analysis.py
-该程序分析GitHub社交网络的结构特征，如度分布、密度、聚类系数等等。
-结果保存在graph_structure文件夹。
+### 1. 结构分析structure.analysis.py
+输出节点数、边数、平均出入度、网络密度、聚类系数、平均路径长度、直径。
+输出出入度分布，并进行可视化
 
-<<<<<<< HEAD
-### 2. 差异分析 discrepancy_analysis.py
-该程序分析Web开发者与机器学习开发者的网络结构差异。
-结果保存在discrepancy_analysis文件夹。
+### 2. 差异分析discrepancy_analysis.py
+对比两个群体的中心性指标，进行t检验和Cohen's d计算。
+中心性指标包括：度中心性、接近中心性、介数中心性、特征向量中心性。
 
-### 3. 节点级别分析 node_level_analysis.py
-该程序分析了每个节点的核心度、结构洞指标，如PageRank、Coreness、Effective Size等。
-结果保存在node_level文件夹。
-=======
-### 2. 结构分析 structure_analysis.py
-该程序分析GitHub社交网络的结构特征，如度分布、密度、聚类系数等等。结果保存在graph_structure文件夹。
+### 3. 节点层级分析node_level_analysis.py
+输出节点的PageRank、Coreness、Constraint、Effective_size。
 
-### 3. 模型拟合 model_fitting.py
-该程序使用ERGM模型拟合GitHub社交网络，分析不同开发者类型之间的联系。结果保存在ERGM文件夹。
-随后使用
->>>>>>> 9d522642340108e3f30c631320acde1c5e410260
+### 4. 社区检测community_detection.py
+
+
+### 5. 聚类分析clustering_analysis.py
+
+
+### 6. 模块分析modularity_analysis.py
+
+
+### 7. 可视化
