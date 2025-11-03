@@ -21,9 +21,14 @@ from multiprocessing import Pool, cpu_count
 from functools import partial
 
 # ===================== 用户配置区 =====================
-NODES_FILE = 'musae_git_target.csv'   # 节点表路径
-EDGES_FILE = 'musae_git_edges_fixed.csv'   # 边表路径
-OUTPUT_FILE = 'node_level/results.csv'     # 输出路径
+import os
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+data_dir = os.path.join(BASE_DIR, "..", "data")
+output_dir = os.path.join(BASE_DIR, "node_level")
+
+NODES_FILE = os.path.join(data_dir, 'musae_git_target.csv')   # 节点表路径
+EDGES_FILE = os.path.join(data_dir, 'musae_git_edges_fixed.csv')   # 边表路径
+OUTPUT_FILE = os.path.join(output_dir, 'results.csv')     # 输出路径
 DIRECTED = True                 # 是否为有向图
 PROCESSES = None                 # 并行进程数（默认 cpu_count()-1）
 # =====================================================
@@ -114,6 +119,8 @@ def compute_structural_holes(g, processes=None):
     return results
 
 def main():
+    # 确保输出目录存在
+    os.makedirs(output_dir, exist_ok=True)
     nodes_df = pd.read_csv(NODES_FILE, dtype=str)
     edges_df = pd.read_csv(EDGES_FILE, dtype=str)
     if 'weight' in edges_df.columns:

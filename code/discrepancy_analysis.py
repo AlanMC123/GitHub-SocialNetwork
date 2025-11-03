@@ -20,8 +20,12 @@ plt.rcParams['axes.unicode_minus'] = False
 # 2. Load Data
 # ===========================================
 print("Loading data...")
-nodes = pd.read_csv("musae_git_target.csv")
-edges = pd.read_csv("musae_git_edges_fixed.csv")
+# 使用相对路径指向data目录
+import os
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+data_dir = os.path.join(BASE_DIR, "..", "data")
+nodes = pd.read_csv(os.path.join(data_dir, "musae_git_target.csv"))
+edges = pd.read_csv(os.path.join(data_dir, "musae_git_edges_fixed.csv"))
 
 print(f"Nodes: {len(nodes)}, Edges: {len(edges)}")
 

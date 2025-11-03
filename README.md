@@ -15,6 +15,7 @@ pandas, igraph, tqdm, numpy, scipy.stats, seaborn, matplotlib, reportlab, collec
 该程序分析GitHub社交网络的结构特征，如度分布、密度、聚类系数等等。
 结果保存在graph_structure文件夹。
 
+<<<<<<< HEAD
 ### 2. 差异分析 discrepancy_analysis.py
 该程序分析Web开发者与机器学习开发者的网络结构差异。
 结果保存在discrepancy_analysis文件夹。
@@ -22,3 +23,11 @@ pandas, igraph, tqdm, numpy, scipy.stats, seaborn, matplotlib, reportlab, collec
 ### 3. 节点级别分析 node_level_analysis.py
 该程序分析了每个节点的核心度、结构洞指标，如PageRank、Coreness、Effective Size等。
 结果保存在node_level文件夹。
+=======
+### 2. 结构分析 structure_analysis.py
+该程序分析GitHub社交网络的结构特征，如度分布、密度、聚类系数等等。结果保存在graph_structure文件夹。
+
+### 3. 模型拟合 model_fitting.py
+该程序使用ERGM模型拟合GitHub社交网络，分析不同开发者类型之间的联系。结果保存在ERGM文件夹。
+随后使用
+>>>>>>> 9d522642340108e3f30c631320acde1c5e410260
