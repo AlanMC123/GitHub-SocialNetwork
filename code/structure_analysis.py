@@ -22,7 +22,7 @@ plt.rcParams['font.family'] = ['Microsoft YaHei']
 import os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 data_dir = os.path.join(BASE_DIR, "..", "data")
-output_dir = os.path.join(BASE_DIR, "graph_structure")
+output_dir = "graph_structure"
 
 NODES_PATH = os.path.join(data_dir, "musae_git_target.csv")  # 节点表路径
 EDGES_PATH = os.path.join(data_dir, "musae_git_edges_fixed.csv")  # 边表路径

@@ -24,7 +24,7 @@ from functools import partial
 import os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 data_dir = os.path.join(BASE_DIR, "..", "data")
-output_dir = os.path.join(BASE_DIR, "node_level")
+output_dir = "node_level"
 
 NODES_FILE = os.path.join(data_dir, 'musae_git_target.csv')   # 节点表路径
 EDGES_FILE = os.path.join(data_dir, 'musae_git_edges_fixed.csv')   # 边表路径
