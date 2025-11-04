@@ -29,7 +29,7 @@ output_dir = "node_level"
 NODES_FILE = os.path.join(data_dir, 'musae_git_target.csv')   # 节点表路径
 EDGES_FILE = os.path.join(data_dir, 'musae_git_edges_fixed.csv')   # 边表路径
 OUTPUT_FILE = os.path.join(output_dir, 'results.csv')     # 输出路径
-DIRECTED = True                 # 是否为有向图
+DIRECTED = False                # 是否为有向图 (设置为False以使用无向边)
 PROCESSES = None                 # 并行进程数（默认 cpu_count()-1）
 # =====================================================
 
