@@ -193,8 +193,16 @@ class GNNNetworkAnalyzer:
         print(f"节点嵌入生成完成，嵌入维度: {self.embeddings.shape[1]}")
         return self.embeddings
     
-    def save_community_results(self, partition, file_path='d:\\code\\socianetwork\\community\\community_results.csv'):
+    def save_community_results(self, partition, file_path=None):
         """保存社区检测结果到CSV文件"""
+        # 如果没有提供路径，使用脚本所在目录的outputs文件夹
+        if file_path is None:
+            import os
+            BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+            outputs_dir = os.path.join(BASE_DIR, 'outputs')
+            os.makedirs(outputs_dir, exist_ok=True)
+            file_path = os.path.join(outputs_dir, 'community_results.csv')
+        
         # 创建DataFrame保存社区结果
         community_df = pd.DataFrame(list(partition.items()), columns=['node_id', 'community_id'])
         
@@ -228,10 +236,11 @@ class GNNNetworkAnalyzer:
             size = len(degrees)
             print(f"聚类 {cluster_id}: 节点数={size}, 平均度={avg_degree:.2f}")
         
-        # 保存聚类结果
-        community_dir = 'd:\\code\\socianetwork\\community'
-        os.makedirs(community_dir, exist_ok=True)
-        save_path = os.path.join(community_dir, 'node_cluster_labels.npy')
+        # 保存聚类结果到outputs文件夹
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        outputs_dir = os.path.join(BASE_DIR, 'outputs')
+        os.makedirs(outputs_dir, exist_ok=True)
+        save_path = os.path.join(outputs_dir, 'node_cluster_labels.npy')
         np.save(save_path, labels)
         print(f"聚类结果已保存为 {save_path}")
         
@@ -298,8 +307,14 @@ class GNNNetworkAnalyzer:
 def main():
     # 数据集路径
     import os
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(BASE_DIR, "..", "data", "musae_git_edges_fixed.csv")
+    # 获取项目根目录（从当前脚本目录向上两级）
+    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+    PROJECT_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
+    file_path = os.path.join(PROJECT_ROOT, "data", "musae_git_edges_fixed.csv")
+    
+    print(f"当前脚本目录: {SCRIPT_DIR}")
+    print(f"项目根目录: {PROJECT_ROOT}")
+    print(f"数据文件路径: {file_path}")
     
     # 创建分析器实例
     analyzer = GNNNetworkAnalyzer(file_path)
