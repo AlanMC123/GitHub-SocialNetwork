@@ -362,7 +362,12 @@ class LinkPrediction:
         print(f"\n=== 分析 {method} 预测的链接 ===")
         
         # 根据阈值获取预测为正的链接
-        predicted_pos = [all_test_edges[i] for i in range(len(scores)) if scores[i] >= threshold]
+        predicted_pos = []
+        predicted_scores = []
+        for i in range(len(scores)):
+            if scores[i] >= threshold:
+                predicted_pos.append(all_test_edges[i])
+                predicted_scores.append(scores[i])
         
         # 获取真实正链接
         true_pos = [all_test_edges[i] for i in range(len(labels)) if labels[i] == 1]
@@ -383,9 +388,26 @@ class LinkPrediction:
         
         # 统计链接类型分布
         link_types = defaultdict(int)
-        for u, v in predicted_pos:
+        predicted_links_with_info = []
+        for i, (u, v) in enumerate(predicted_pos):
             link_type = get_link_type(u, v)
             link_types[link_type] += 1
+            
+            # 添加链接信息
+            type_str = "其他"
+            if link_type == (0, 0):
+                type_str = "Web-Web"
+            elif link_type in [(0, 1), (1, 0)]:
+                type_str = "Web-ML"
+            elif link_type == (1, 1):
+                type_str = "ML-ML"
+            
+            predicted_links_with_info.append({
+                'source': u,
+                'target': v,
+                'score': predicted_scores[i],
+                'type': type_str
+            })
         
         print(f"预测的链接类型分布:")
         for link_type, count in link_types.items():
@@ -397,6 +419,29 @@ class LinkPrediction:
                 print(f"  ML-ML: {count} ({count/len(predicted_pos)*100:.2f}%)")
             else:
                 print(f"  其他: {count} ({count/len(predicted_pos)*100:.2f}%)")
+        
+        # 保存预测链接结果到文件
+        output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'outputs')
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # 保存所有预测结果
+        all_prediction_df = pd.DataFrame({
+            'source': [edge[0] for edge in all_test_edges],
+            'target': [edge[1] for edge in all_test_edges],
+            'score': scores,
+            'true_label': labels,
+            'predicted_label': [1 if s >= threshold else 0 for s in scores]
+        })
+        all_prediction_file = os.path.join(output_dir, f'{method}_all_predictions.csv')
+        all_prediction_df.to_csv(all_prediction_file, index=False)
+        print(f"所有预测结果已保存到 {all_prediction_file}")
+        
+        # 保存预测为正的链接
+        if predicted_links_with_info:
+            predicted_df = pd.DataFrame(predicted_links_with_info)
+            predicted_file = os.path.join(output_dir, f'{method}_predicted_links.csv')
+            predicted_df.to_csv(predicted_file, index=False)
+            print(f"预测为正的链接已保存到 {predicted_file}")
         
         return link_types
     
@@ -464,7 +509,13 @@ def main():
     # 获取数据目录
     import os
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    data_dir = os.path.join(BASE_DIR, "..", "data")
+    # 从当前脚本目录向上两级到达项目根目录
+    PROJECT_ROOT = os.path.dirname(os.path.dirname(BASE_DIR))
+    data_dir = os.path.join(PROJECT_ROOT, "data")
+    
+    print(f"脚本目录: {BASE_DIR}")
+    print(f"项目根目录: {PROJECT_ROOT}")
+    print(f"数据目录: {data_dir}")
     
     # 创建链接预测实例
     lp = LinkPrediction(data_dir)
